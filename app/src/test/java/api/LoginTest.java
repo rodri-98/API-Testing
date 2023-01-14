@@ -1,46 +1,35 @@
 package api;
 
-import org.hamcrest.Matchers;
+import org.aeonbits.owner.ConfigFactory;
+import org.junit.Assert;
 import org.junit.Test;
 
-import io.restassured.http.ContentType;
+import api.login.Login;
+import api.properties.ConfigProp;
+import io.restassured.response.Response;
 
-import static io.restassured.RestAssured.*;
 
 public class LoginTest {
 
-    private final static String LOGIN = "{\"username\":\"rodrigo.bernal\",\"password\":\"apitesting\"}";
+    private final ConfigProp config = ConfigFactory.create(ConfigProp.class);
 
     @Test
     public void testStatusCode() {
+        Login login = new Login();
+        Response response = login.login(config.username(), config.password());
+        Assert.assertEquals(200, response.getStatusCode());
 
-        baseURI = "https://test-api.k6.io";
-
-        given().log().all()
-                .contentType(ContentType.JSON)
-                .body(LOGIN)
-                .post("/auth/basic/login/")
-        .then().log().all()
-                .assertThat()
-                .statusCode(200);
     }
 
     @Test
     public void testResponseBody() {
-
-        baseURI = "https://test-api.k6.io";
-
-        given().log().all()
-                .contentType(ContentType.JSON)
-                .body(LOGIN)
-                .post("/auth/basic/login/")
-        .then().log().all()
-                .assertThat()
-                .body("id", Matchers.equalTo(664426))
-                .body("username", Matchers.equalTo("rodrigo.bernal"))
-                .body("first_name", Matchers.equalTo("Rodrigo"))
-                .body("last_name", Matchers.equalTo("Bernal"))
-                .body("email", Matchers.equalTo("rodrigo.bernal@jala.university"))
-                .body("date_joined", Matchers.equalTo("2022-12-21T15:02:16.417500Z"));
+        Login login = new Login();
+        Response response = login.login(config.username(), config.password());
+        Assert.assertEquals(664426, response.jsonPath().getInt("id"));
+        Assert.assertEquals("rodrigo.bernal", response.jsonPath().getString("username"));
+        Assert.assertEquals("Rodrigo", response.jsonPath().getString("first_name"));
+        Assert.assertEquals("Bernal", response.jsonPath().getString("last_name"));
+        Assert.assertEquals("rodrigo.bernal@jala.university", response.jsonPath().getString("email"));
+        Assert.assertEquals("2022-12-21T15:02:16.417500Z", response.jsonPath().getString("date_joined"));
     }
 }
